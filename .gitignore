@@ -19,6 +19,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+federated_medical_rag_architecture.md
+federated_medical_rag_architecture.png
 
 # Virtual Environment
 venv/
