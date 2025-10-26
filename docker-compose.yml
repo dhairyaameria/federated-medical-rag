@@ -26,7 +26,6 @@ services:
       - "8080:8080"
       - "8000:8000"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
     depends_on:
@@ -108,7 +107,6 @@ services:
     ports:
       - "8001:8000"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - FLOWER_SERVER=flower-server:8080
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
@@ -120,20 +118,20 @@ services:
     restart: unless-stopped
 
   # Web UI (Gradio)
-  web-ui:
-    build:
-      context: .
-      dockerfile: Dockerfile.ui
-    container_name: web-ui
-    ports:
-      - "7860:7860"
-    environment:
-      - API_SERVER=http://api-server:8000
-    depends_on:
-      - api-server
-    networks:
-      - fedrag-network
-    restart: unless-stopped
+  # web-ui:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.ui
+  #   container_name: web-ui
+  #   ports:
+  #     - "7860:7860"
+  #   environment:
+  #     - API_SERVER=http://api-server:8000
+  #   depends_on:
+  #     - api-server
+  #   networks:
+  #     - fedrag-network
+  #   restart: unless-stopped
 
   # PostgreSQL (for metadata and audit logs)
   postgres:

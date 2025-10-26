@@ -80,7 +80,6 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
 ```
 
 #### Option 2: Docker (Recommended for Production)
@@ -89,9 +88,6 @@ cp .env.example .env
 # Clone the repository
 git clone https://github.com/yourusername/federated-medical-rag.git
 cd federated-medical-rag
-
-# Set environment variables
-echo "OPENAI_API_KEY=your-key-here" > .env
 
 # Start all services
 docker-compose up -d
