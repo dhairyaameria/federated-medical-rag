@@ -1,0 +1,210 @@
+version: '3.8'
+
+services:
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+  # Flower Server
+  flower-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: flower-server
+    ports:
+      - "8080:8080"
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    depends_on:
+      - qdrant
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+    command: python -m src.server
+
+  # Flower Client 1 (Hospital A)
+  flower-client-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: flower-client-1
+    environment:
+      - CLIENT_ID=0
+      - DATA_PATH=/data
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - FLOWER_SERVER=flower-server:8080
+    volumes:
+      - ./data/hospital_a:/data
+    depends_on:
+      - qdrant
+      - flower-server
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+  # Flower Client 2 (Hospital B)
+  flower-client-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: flower-client-2
+    environment:
+      - CLIENT_ID=1
+      - DATA_PATH=/data
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - FLOWER_SERVER=flower-server:8080
+    volumes:
+      - ./data/hospital_b:/data
+    depends_on:
+      - qdrant
+      - flower-server
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+  # Flower Client 3 (Research Center)
+  flower-client-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: flower-client-3
+    environment:
+      - CLIENT_ID=2
+      - DATA_PATH=/data
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - FLOWER_SERVER=flower-server:8080
+    volumes:
+      - ./data/research_center:/data
+    depends_on:
+      - qdrant
+      - flower-server
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+  # API Server (FastAPI)
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: api-server
+    ports:
+      - "8001:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FLOWER_SERVER=flower-server:8080
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    depends_on:
+      - flower-server
+      - qdrant
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+  # Web UI (Gradio)
+  web-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: web-ui
+    ports:
+      - "7860:7860"
+    environment:
+      - API_SERVER=http://api-server:8000
+    depends_on:
+      - api-server
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+  # PostgreSQL (for metadata and audit logs)
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=fedrag
+      - POSTGRES_PASSWORD=fedrag_pass
+      - POSTGRES_DB=fedrag_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+  # Redis (for caching)
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # Prometheus (monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  # Grafana (visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - fedrag-network
+    restart: unless-stopped
+
+volumes:
+  qdrant_storage:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  fedrag-network:
+    driver: bridge
