@@ -1,6 +1,7 @@
 from datasets import load_dataset, load_from_disk
 from typing import List, Dict
 import json
+import os
 
 class PubMedQALoader:
     """Load and split PubMedQA dataset for federated clients"""

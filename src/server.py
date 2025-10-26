@@ -51,7 +51,7 @@ class FederatedRAGServer:
             }
             for doc_id, score in sorted_docs
         ]
-        
+        print(merged_results)
         return merged_results
     
     def aggregate_results(self, query: str, client_results: List[List[Dict]]) -> List[Dict]:

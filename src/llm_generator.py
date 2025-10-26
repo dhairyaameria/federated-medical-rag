@@ -1,29 +1,53 @@
-from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import HumanMessage, SystemMessage
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage, SystemMessage
 from typing import List, Dict
 import os
 
 class MedicalLLMGenerator:
     """Generate answers using LLM with retrieved context"""
     
-    def __init__(self, model_name: str = "gpt-4", temperature: float = 0.1):
-        self.llm = ChatOpenAI(
+    def __init__(self, provider: str = "anthropic", model_name: str = "claude-3-5-sonnet-20241022", temperature: float = 0.1):
+        """
+        Initialize LLM Generator with Anthropic Claude
+        
+        Args:
+            provider: Should be "anthropic"
+            model_name: Claude model identifier
+            temperature: Sampling temperature
+        """
+        # Load API key from environment
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        
+        if not api_key:
+            raise ValueError(
+                "\n❌ Anthropic API key not found!\n\n"
+                "Please set your API key:\n"
+                "  Option 1: export ANTHROPIC_API_KEY='sk-ant-...'\n"
+                "  Option 2: Add to .env file: ANTHROPIC_API_KEY=sk-ant-...\n\n"
+                "Get your key at: https://console.anthropic.com/settings/keys"
+            )
+        
+        print(f"Initializing Claude {model_name}...")
+        
+        self.llm = ChatAnthropic(
             model=model_name,
             temperature=temperature,
-            api_key=os.getenv("OPENAI_API_KEY")
+            api_key=api_key,
+            max_tokens=1024
         )
         
-        self.system_prompt = """You are a medical AI assistant helping healthcare professionals.
-        Your task is to answer medical questions based ONLY on the provided context documents.
+        print(f"✓ Claude {model_name} ready!")
         
-        Guidelines:
-        1. Base your answer strictly on the provided context
-        2. Cite the source documents using [1], [2], etc.
-        3. If the context doesn't contain enough information, say so
-        4. Be precise and use medical terminology appropriately
-        5. Do not make up information or hallucinate
-        """
+        self.system_prompt = """You are a medical AI assistant helping healthcare professionals.
+Your task is to answer medical questions based ONLY on the provided context documents.
+
+Guidelines:
+1. Base your answer strictly on the provided context
+2. Cite the source documents using [1], [2], etc.
+3. If the context doesn't contain enough information, say so clearly
+4. Be precise and use medical terminology appropriately
+5. Do not make up information or hallucinate
+6. If asked about treatments, always recommend consulting with healthcare providers"""
     
     def generate_answer(self, query: str, context_docs: List[Dict], top_k: int = 5) -> Dict:
         """Generate answer with citations"""
@@ -64,7 +88,8 @@ Include citations [1], [2], etc. to reference the source documents."""
                     'metadata': doc.get('metadata', {})
                 }
                 for i, doc in enumerate(context_docs[:top_k], start=1)
-            ]
+            ],
+            'model': self.llm.model
         }
         
         return result

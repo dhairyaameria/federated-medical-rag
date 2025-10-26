@@ -1,6 +1,9 @@
 from typing import List, Dict
 import re
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 class MedicalTextPreprocessor:
     """Preprocess medical text for RAG"""

@@ -29,10 +29,26 @@ class MedicalRAGClient(fl.client.NumPyClient):
         self._load_and_index_documents()
     
     def _load_and_index_documents(self):
-        """Load and index client's local documents"""
+        """Load and index client's local documents (with smart caching)"""
+        print(f"Client {self.client_id}: Checking index status...")
+        
+        # Check if collection exists and has data
+        try:
+            collection_info = self.vector_store.client.get_collection(
+                self.vector_store.collection_name
+            )
+            
+            if collection_info.points_count > 0:
+                print(f"Client {self.client_id}: ✓ Found existing index with {collection_info.points_count} documents")
+                print(f"Client {self.client_id}: ✓ Skipping re-indexing (using cached embeddings)")
+                return  # Exit early - data already indexed!
+        except Exception as e:
+            # Collection doesn't exist or error checking - will create below
+            print(f"Client {self.client_id}: No existing index found, creating new one...")
+        
+        # Only runs if no existing index found
         print(f"Client {self.client_id}: Loading documents...")
         
-        # Load documents
         with open(f"{self.data_path}/documents.json", 'r') as f:
             data = json.load(f)
         
@@ -40,11 +56,12 @@ class MedicalRAGClient(fl.client.NumPyClient):
         metadata = data['metadata']
         
         # Preprocess
+        print(f"Client {self.client_id}: Preprocessing documents...")
         chunks = self.preprocessor.chunk_documents(documents)
         chunk_texts = [chunk['text'] for chunk in chunks]
         
         # Generate embeddings
-        print(f"Client {self.client_id}: Generating embeddings...")
+        print(f"Client {self.client_id}: Generating embeddings (this may take 30-60 seconds)...")
         embeddings = self.embedder.encode(chunk_texts)
         
         # Create vector store collection
@@ -57,7 +74,57 @@ class MedicalRAGClient(fl.client.NumPyClient):
         ]
         self.vector_store.add_documents(chunk_texts, embeddings, chunk_metadata)
         
-        print(f"Client {self.client_id}: Indexed {len(chunk_texts)} chunks")
+        print(f"Client {self.client_id}: ✓ Indexed {len(chunk_texts)} chunks")
+    # def _load_and_index_documents(self):
+    #     """Load and index client's local documents"""
+        # print(f"Client {self.client_id}: Loading documents...")
+        
+        # # Load documents
+        # with open(f"{self.data_path}/documents.json", 'r') as f:
+        #     data = json.load(f)
+        
+        # documents = data['documents']
+        # metadata = data['metadata']
+        # Check if collection already has data
+        # try:
+        #     collection_info = self.vector_store.client.get_collection(
+        #         self.vector_store.collection_name
+        #     )
+        #     if collection_info.points_count > 0:
+        #         print(f"Client {self.client_id}: ✓ Using existing index ({collection_info.points_count} documents)")
+        #         return  # Skip indexing - data already there!
+        # except:
+        #     pass  # Collection doesn't exist, proceed with indexing
+        
+        # # Only reach here if collection is empty or doesn't exist
+        # print(f"Client {self.client_id}: Creating new index...")
+        
+        # # Load documents
+        # with open(f"{self.data_path}/documents.json", 'r') as f:
+        #     data = json.load(f)
+        
+        # documents = data['documents']
+        # metadata = data['metadata']
+        
+        # # Preprocess
+        # chunks = self.preprocessor.chunk_documents(documents)
+        # chunk_texts = [chunk['text'] for chunk in chunks]
+        
+        # # Generate embeddings
+        # print(f"Client {self.client_id}: Generating embeddings...")
+        # embeddings = self.embedder.encode(chunk_texts)
+        
+        # # Create vector store collection
+        # self.vector_store.create_collection(dimension=self.embedder.dimension)
+        
+        # # Add to vector store
+        # chunk_metadata = [
+        #     {**metadata[chunk['doc_id']], 'chunk_id': chunk['chunk_id']}
+        #     for chunk in chunks
+        # ]
+        # self.vector_store.add_documents(chunk_texts, embeddings, chunk_metadata)
+        
+        # print(f"Client {self.client_id}: Indexed {len(chunk_texts)} chunks")
     
     def retrieve(self, query: str, top_k: int = 10) -> List[Dict]:
         """Retrieve relevant documents for a query"""

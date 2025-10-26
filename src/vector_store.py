@@ -12,8 +12,17 @@ class QdrantVectorStore:
         self.collection_name = collection_name
     
     def create_collection(self, dimension: int = 768):
-        """Create vector collection"""
+        """Create vector collection if it doesn't exist"""
         try:
+            # Check if collection exists first
+            collections = self.client.get_collections().collections
+            collection_names = [col.name for col in collections]
+            
+            if self.collection_name in collection_names:
+                # Collection exists - silently skip
+                return
+            
+            # Create new collection
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(
@@ -21,9 +30,11 @@ class QdrantVectorStore:
                     distance=Distance.COSINE
                 )
             )
-            print(f"Created collection: {self.collection_name}")
+            print(f"✓ Created new collection: {self.collection_name}")
         except Exception as e:
-            print(f"Collection might already exist: {e}")
+            # Only print actual errors
+            if "already exists" not in str(e).lower():
+                print(f"Warning: {e}")
     
     def add_documents(self, documents: List[str], 
                      embeddings: np.ndarray, 
@@ -47,7 +58,7 @@ class QdrantVectorStore:
         )
         print(f"Added {len(points)} documents to {self.collection_name}")
     
-    def search(self, query_embedding: np.ndarray, top_k: int = 10) -> List[Dict]:
+    def search(self, query_embedding: np.ndarray, top_k: int = 5) -> List[Dict]:
         """Search for similar documents"""
         results = self.client.search(
             collection_name=self.collection_name,

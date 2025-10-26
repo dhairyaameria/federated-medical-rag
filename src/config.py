@@ -1,13 +1,20 @@
 from dataclasses import dataclass
 from typing import Optional
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 @dataclass
 class ModelConfig:
     """Model configuration"""
     embedding_model: str = "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract"
-    llm_model: str = "gpt-4"
-    llm_api_key: Optional[str] = None
+    
+    # LLM Configuration - ANTHROPIC ONLY
+    llm_provider: str = "anthropic"
+    llm_model: str = "claude-3-7-sonnet-20250219"  # Latest Claude model
+    llm_api_key: Optional[str] = None  # Will be loaded from env
     llm_temperature: float = 0.1
     max_tokens: int = 1024
 
@@ -44,9 +51,6 @@ class Config:
         self.retrieval = RetrievalConfig()
         self.flower = FlowerConfig()
         self.vector_store = VectorStoreConfig()
-        
-        # Set API keys from environment
-        self.model.llm_api_key = os.getenv("OPENAI_API_KEY")
 
 # Global config instance
 config = Config()
