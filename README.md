@@ -166,7 +166,6 @@ Sources:
 
 - Python 3.9+
 - Docker & Docker Compose (optional, for production)
-- 8GB+ RAM
 - Anthropic API Key ([Get one here](https://console.anthropic.com/))
 
 ### Installation (5 minutes)
@@ -256,7 +255,7 @@ embedding_model = "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract"
 
 # LLM Configuration
 llm_provider = "anthropic"
-llm_model = "claude-3-5-sonnet-20241022"
+llm_model = "claude-3-7-sonnet-20250219"
 llm_temperature = 0.1
 
 # Retrieval Configuration
@@ -349,73 +348,7 @@ docker-compose logs -f
 
 ---
 
-## 🎓 Implementation Timeline
-
-### Phase 1: Foundation (Weeks 1-2) ✅
-- ✅ Development environment setup
-- ✅ PubMedQA dataset integration
-- ✅ BioBERT embedding pipeline
-- ✅ Qdrant vector store
-- ✅ Basic retrieval system
-
-### Phase 2: Federated Setup (Weeks 3-5) ✅
-- ✅ Dataset splitting (3 clients)
-- ✅ Flower server implementation
-- ✅ Flower client implementation
-- ✅ RRF aggregation
-- ✅ Federated retrieval testing
-
-### Phase 3: LLM Integration (Weeks 6-7) ✅
-- ✅ Claude API integration
-- ✅ Medical Q&A prompts
-- ✅ Citation system
-- ✅ Answer quality validation
-
-### Phase 4: Production Features (Weeks 8-10)
-- ✅ CLI interface (`main.py`)
-- ✅ Web interface (`app.py`)
-- ✅ REST API (optional)
-- ⬜ Caching layer (optional)
-- ⬜ Monitoring dashboards (optional)
-- ✅ Docker deployment
-
-**Total Estimated Time**: 8-12 weeks for full production system
-
----
-
-## 💰 Cost Estimation
-
-### Development Phase (3 months)
-- **Cloud Resources**: $100-200/month (optional)
-  - Self-hosted: $0 (local development)
-  - AWS/Cloud: ~$150/month
-- **Claude API**: $50-150/month
-  - Testing: ~$0.02-0.05 per query
-  - 1000 test queries: ~$20-50
-
-**Total Development**: ~$500-800
-
-### Production (per month)
-- **Infrastructure**: $300-500/month
-  - 3 client servers + 1 server
-  - Qdrant hosting
-  - Load balancing
-- **Claude API**: $500-2000/month
-  - 10K queries/month: ~$500
-  - 50K queries/month: ~$2000
-
-**Total Production**: ~$800-2500/month
-
-**Cost Optimization**:
-- Implement Redis caching (40-60% reduction)
-- Use query deduplication
-- Monitor and optimize prompt tokens
-
----
-
 ## 📚 Learning Outcomes
-
-After completing this project, you will master:
 
 ### Technical Skills
 ✅ **Federated Learning**: Client-server architecture, distributed processing  
@@ -429,26 +362,6 @@ After completing this project, you will master:
 ✅ **Privacy-Preserving ML**: Federated architectures  
 ✅ **Distributed Systems**: Client coordination, aggregation  
 ✅ **Healthcare AI**: HIPAA compliance, medical data handling  
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Areas for improvement:
-
-- 🔹 Additional datasets (BioASQ, MIMIC-IV)
-- 🔹 Advanced reranking strategies
-- 🔹 Multi-turn conversation support
-- 🔹 Query expansion techniques
-- 🔹 Fine-tuning with FedRAG
-- 🔹 Multi-modal support (medical images)
-```bash
-# Contribution workflow
-git checkout -b feature/your-feature
-git commit -am 'Add feature'
-git push origin feature/your-feature
-# Create Pull Request
-```
 
 ---
 
@@ -488,5 +401,3 @@ This project is licensed under the Apache License 2.0 - see [LICENSE](LICENSE) f
 ---
 
 **Built with ❤️ for healthcare professionals worldwide**
-
-*For questions or support, please open an issue on GitHub.*
